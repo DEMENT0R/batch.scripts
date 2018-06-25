@@ -3,6 +3,7 @@
 	
 	set "file=%~f1"
 	set "xpath=%~2"
+	set "option=%~3"
 	
 	if "%~2" equ "" (
 		goto :printHelp
@@ -24,7 +25,7 @@
 	) 
 	
 	
-    cscript //E:JScript //nologo "%~f0" /file:"%file%" /xpath:"%xpath%"
+    cscript //E:JScript //nologo "%~f0" /file:"%file%" /xpath:"%xpath%" /option:"%option%"
 
     exit /b %errorlevel%
 	
@@ -41,9 +42,23 @@
 
 if (WScript.Arguments.length<2)
 {
-	
+	WScript.Echo("Not enough arguments");
+	WScript.Quit(3);
 }
 
+
+function escapeRegExp(str) {
+    return str.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+}
+
+function replaceAll(str, find, replace) {
+  return str.replace(new RegExp(escapeRegExp(find), 'g'), replace);
+}
+
+var xp=WScript.Arguments.Named.Item("xpath");
+xp=replaceAll(xp,"'",'"');
+
+var option=WScript.Arguments.Named.Item("option");
 
 var objDoc;
 var objNodes;
@@ -74,7 +89,7 @@ if(!loaded){
 }
 
 try {
-	var objNodes = objDoc.selectNodes(WScript.Arguments.Named.Item("xpath"));
+	var objNodes = objDoc.selectNodes(xp);
 } catch (err){
 	WScript.Echo("invalid xpath expression");
 	WScript.Echo(err.message);
@@ -82,5 +97,10 @@ try {
 }
 
 for (var i=0;i<objNodes.length;i++){
-	WScript.Echo(objNodes.item(i).text);
+    if(option.toLowerCase()=="xml"){
+		WScript.Echo(objNodes.item(i).xml);
+	} else {
+		WScript.Echo(objNodes.item(i).text);
+	}
+	
 }
